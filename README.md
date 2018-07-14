@@ -1,5 +1,6 @@
-# map-matching-matlab
-simple map-matching code for GraphHopper's map-matching lib
+map-matching-matlab
+-----------------------
+Use GraphHopper's map-matching lib from matlab (a java wrapper)
 
 # Usage
 
@@ -68,4 +69,13 @@ trajectory=[
 39.869902	116.471512	1478793882]
 
 road_path = t.toRoads(trajectory)
+% you got something like this,
+%
+% 0	1478793829.489	8733	73
+% 0	1478793878.839	8734	49
+%
+% the second column is the timestamp (second) at which the car enter the road, the first column is the timeslot the timestamp falls (48 timeslot a day)
+% the third column is roadId which is only unique for one import, if you import map a second time, it may change.
+% the last column is travelTime which is the time the car spent to travel through the road (seconds).
+
 ```

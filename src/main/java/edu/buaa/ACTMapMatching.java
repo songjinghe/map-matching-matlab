@@ -161,7 +161,7 @@ public class ACTMapMatching {
         double[][] result = new double[edges.size()][];
         int i=0;
         for(TrajectoryRoadEntry e : edges){
-            result[i] = new double[]{e.timeSlot, e.timeStart, e.edgeID, e.travelTime};
+            result[i] = new double[]{e.timeSlot, e.timeStart/1000, e.edgeID, e.travelTime};
             i++;
         }
         return result;
