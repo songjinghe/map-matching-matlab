@@ -162,7 +162,9 @@ public class ACTMapMatching {
                                     startLat, startLon,
                                     endLat, endLon,
                                     gpxPoint.getLat(), gpxPoint.getLon());
-                            result.add( new double[]{edgeID, r.y, r.x, gpxPoint.getLat(), gpxPoint.getLon(), gpxPoint.getTime()/1000} );
+                            if(r.inside) {
+                                result.add(new double[]{edgeID, r.y, r.x, gpxPoint.getLat(), gpxPoint.getLon(), gpxPoint.getTime() / 1000});
+                            }
                         }
                     }
                 }
