@@ -164,6 +164,9 @@ public class ACTMapMatching {
                                     gpxPoint.getLat(), gpxPoint.getLon());
                             if(r.inside) {
                                 result.add(new double[]{edgeID, r.y, r.x, gpxPoint.getLat(), gpxPoint.getLon(), gpxPoint.getTime() / 1000});
+                                k++;
+                            }else{
+                                break;
                             }
                         }
                     }
