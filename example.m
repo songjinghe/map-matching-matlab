@@ -1,6 +1,6 @@
 t = edu.buaa.ACTMapMatching
-t.load('D:\map-matching-matlab\cache', 20) # 20 is the gps accuracy, unit one meter
-# example trajectory, first column is latitude, second is longitude, third is timestamp (seconds).
+t.load('D:\map-matching-matlab\cache', 20) % 20 is the gps accuracy, unit one meter
+% example trajectory, first column is latitude, second is longitude, third is timestamp (seconds).
 trajectory=[
 39.862180	116.471353	1478793600
 39.862180	116.471353	1478793606
@@ -305,7 +305,7 @@ trajectory=[
 
 road_path = t.toRoads(trajectory)
 
-# road_path has 4 column: timeSlot, timeStart, roadId, travelTime.
-# timeStart is the timestamp at which the car enter the road.
-# roadId is only unique for one import, if you import map a second time, it may change.
-# travelTime is the time the car spent to travel through the road (seconds).
+% road_path has 4 column: timeSlot, timeStart, roadId, travelTime.
+% timeStart is the timestamp at which the car enter the road.
+% roadId is only unique for one import, if you import map a second time, it may change.
+% travelTime is the time the car spent to travel through the road (seconds).
