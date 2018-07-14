@@ -1,4 +1,4 @@
-package edu.buaa.act;
+package edu.buaa;
 
 import com.graphhopper.matching.EdgeMatch;
 import com.graphhopper.matching.GPXExtension;
