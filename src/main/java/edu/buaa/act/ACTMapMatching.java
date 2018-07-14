@@ -30,14 +30,15 @@ public class ACTMapMatching {
 
     public static void main(String[] args)
     {
-        if(args.length>2){
-            importMap(args[1], args[2]);
+        if(args.length>1){
+            System.out.println("import map data from "+args[0]+" to "+args[1]);
+            importMap(args[0], args[1]);
         }else{
             System.err.println("args too less: need map_file_path and cache_dir_path");
         }
     }
 
-    public static void importMap(String mapFileStr, String cacheDirStr){
+    private static void importMap(String mapFileStr, String cacheDirStr){
         File mapFile = new File(mapFileStr);
         File cacheDir = new File(cacheDirStr);
         if(!mapFile.exists()){
@@ -139,7 +140,7 @@ public class ACTMapMatching {
         List<GPXEntry> result = new ArrayList<>();
         for(int i=0; i<traj.length; i++){
             double[] row = traj[i];
-            result.add(new GPXEntry(row[1], row[2], ((long) row[3])*1000));
+            result.add(new GPXEntry(row[0], row[1], ((long) row[2])*1000));
         }
         return result;
     }
