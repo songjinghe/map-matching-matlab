@@ -136,6 +136,62 @@ public class ACTMapMatching {
         return null;
     }
 
+    public double[][] exactPoints(double[][] traj) {
+        List<GPXEntry> data = input(traj);
+        try {
+            MatchResult mr = mapMatching.doWork(data);
+            List<EdgeMatch> matches = mr.getEdgeMatches();
+            if(matches.isEmpty()){
+                throw new NoEdgeMatchedException();
+            }else {
+                List<double[]> result = new ArrayList<>();
+                for (EdgeMatch edge : matches) {
+                    int edgeID = edge.getEdgeState().getEdge();
+                    List<GPXExtension> gpsPointOnTheWay = edge.getGpxExtensions();
+                    int k = 0;
+                    PointList nodes = edge.getEdgeState().fetchWayGeometry(3);
+                    for (int j = 0; j < nodes.size() - 1; j++) { // loop through edges. edgeNumber = nodeNumber - 1
+                        double startLat = nodes.getLatitude(j);
+                        double startLon = nodes.getLongitude(j);
+                        double endLat = nodes.getLatitude(j + 1);
+                        double endLon = nodes.getLongitude(j + 1);
+                        ProjectionResult r;
+                        while (k < gpsPointOnTheWay.size()) {
+                            GPXEntry gpxPoint = gpsPointOnTheWay.get(k).getEntry();
+                            r = projectionPoint(
+                                    startLat, startLon,
+                                    endLat, endLon,
+                                    gpxPoint.getLat(), gpxPoint.getLon());
+                            result.add( new double[]{edgeID, r.y, r.x, gpxPoint.getLat(), gpxPoint.getLon(), gpxPoint.getTime()/1000} );
+                        }
+                    }
+                }
+                double[][] toReturn = new double[result.size()][];
+                int i=0;
+                for(double[] line : result){
+                    toReturn[i] = line;
+                    i++;
+                }
+                return toReturn;
+            }
+        } catch (IllegalStateException e) {
+            System.err.println("MM failed: Unknown error in map-matching lib.");
+        } catch (NoEdgeMatchedException e) {
+            System.err.println("MM failed: No road matched.");
+        } catch (CannotCalcTravelTimeException e) {
+            System.err.println("MM failed: Unable to calculate time.");
+        } catch (IllegalArgumentException e) {
+            System.err.println("MM failed: Seems get lost.");
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Sequence is broken for submitted track at time step")) {
+                System.err.println("MM failed: Too long to match.");
+            }else{
+                System.err.println("MM failed: Runtime error in map-matching lib.");
+            }
+        }
+        return null;
+    }
+
     private List<GPXEntry> input(double[][] traj){
         List<GPXEntry> result = new ArrayList<>();
         for(int i=0; i<traj.length; i++){

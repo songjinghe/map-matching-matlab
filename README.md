@@ -78,4 +78,10 @@ road_path = t.toRoads(trajectory)
 % the third column is roadId which is only unique for one import, if you import map a second time, it may change.
 % the last column is travelTime which is the time the car spent to travel through the road (seconds).
 
+
+matched = t.exactPoints(trajectory)
+% you got something like this,
+% road_id, matched_lat, matched_lon, origin_lat, origin_lon, origin_time
+% 
+
 ```
