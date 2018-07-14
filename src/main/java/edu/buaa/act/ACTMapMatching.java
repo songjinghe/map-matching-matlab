@@ -28,21 +28,34 @@ public class ACTMapMatching {
     public MapMatching mapMatching;
     private File cacheDir;
 
-    public void initMap(String PbfMapFile, String tmpDir, double gpsAccuracy) throws IOException
+    public static void main(String[] args)
     {
-        File mapFile = new File(PbfMapFile);
+        if(args.length>2){
+            importMap(args[1], args[2]);
+        }else{
+            System.err.println("args too less: need map_file_path and cache_dir_path");
+        }
+    }
+
+    public static void importMap(String mapFileStr, String cacheDirStr){
+        File mapFile = new File(mapFileStr);
+        File cacheDir = new File(cacheDirStr);
         if(!mapFile.exists()){
             System.err.println("map file not exist!");
             return;
         }
-        File cacheDir = new File(tmpDir);
         if(!cacheDir.exists()){
-            Files.createDirectories(cacheDir.toPath());
+            try {
+                Files.createDirectories(cacheDir.toPath());
+            } catch (IOException e) {
+                System.err.println(e.getMessage());
+                return;
+            }
         }else if(cacheDir.isFile()){
             System.err.println("invalid cache dir! need folder but find file.");
             return;
         }
-        this.cacheDir = cacheDir;
+        GraphHopperOSM hopper = new GraphHopperOSM();
         CarFlagEncoder encoder = new CarFlagEncoder();
         // import OpenStreetMap data
         hopper.setDataReaderFile(mapFile.getAbsolutePath());
@@ -50,6 +63,27 @@ public class ACTMapMatching {
         hopper.setEncodingManager(new EncodingManager(encoder));
         hopper.getCHFactoryDecorator().setEnabled(false);
         hopper.importOrLoad();
+    }
+
+    public void load(String tmpDir, double gpsAccuracy)
+    {
+        File cacheDir = new File(tmpDir);
+        if(!cacheDir.exists()){
+            System.err.println("invalid cache dir! folder not exist.");
+        }else if(cacheDir.isFile()){
+            System.err.println("invalid cache dir! need folder but find file.");
+            return;
+        }else if(cacheDir.list()==null){
+
+        }
+        this.cacheDir = cacheDir;
+        CarFlagEncoder encoder = new CarFlagEncoder();
+        // import OpenStreetMap data
+//        hopper.setDataReaderFile(mapFile.getAbsolutePath());
+//        hopper.setGraphHopperLocation(cacheDir.getAbsolutePath());
+        hopper.setEncodingManager(new EncodingManager(encoder));
+        hopper.getCHFactoryDecorator().setEnabled(false);
+        hopper.load(cacheDir.getAbsolutePath());
         // create MapMatching object, can and should be shared across threads
         String algorithm = Parameters.Algorithms.DIJKSTRA_BI;
         Weighting weighting = new FastestWeighting(encoder);
