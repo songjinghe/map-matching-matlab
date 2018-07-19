@@ -305,10 +305,11 @@ trajectory=[
 
 road_path = t.toRoads(trajectory);
 
-% road_path has 4 column: timeSlot, timeStart, roadId, travelTime.
+% road_path has 5 column: timeSlot, timeStart, roadId, travelTime, roadLength.
 % timeStart is the timestamp at which the car enter the road.
 % roadId is only unique for one import, if you import map a second time, it may change.
 % travelTime is the time the car spent to travel through the road (seconds).
+% roadLength is the length of road (distance from road start point to end point, in meters)
 
 matched = t.exactPoints(trajectory);
 % you got a matrix with these columns: road_id, matched_lat, matched_lon, origin_lat, origin_lon, origin_time
@@ -328,3 +329,6 @@ matched = t.exactPoints(trajectory);
 % 8734	39.8691949559484	116.471239125180	39.8691950000000	116.471230000000	1478793870.00000
 % 8734	39.8697481120190	116.471241795526	39.8697480000000	116.471265000000	1478793876.00000
 % 57875	39.8698396722739	116.471486794774	39.8699020000000	116.471512000000	1478793882.00000
+
+timeslot = t.timestamp2slot(1478793882)
+% return the timeslot of given timestamp (in seconds). A day has 48 timeslot (each last half an hour) range from 0 to 47.

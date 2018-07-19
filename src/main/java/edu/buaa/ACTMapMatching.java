@@ -222,7 +222,7 @@ public class ACTMapMatching {
         double[][] result = new double[edges.size()][];
         int i=0;
         for(TrajectoryRoadEntry e : edges){
-            result[i] = new double[]{e.timeSlot, e.timeStart/1000, e.edgeID, e.travelTime};
+            result[i] = new double[]{e.timeSlot, e.timeStart/1000, e.edgeID, e.travelTime, e.roadLen};
             i++;
         }
         return result;
@@ -301,12 +301,10 @@ public class ACTMapMatching {
                 disToWayStart += edgeLength;
 //                // query all nodes (include pillar node)
 //                queryPoints.add(disToTrajectoryStart+disToWayStart);
-//                queryIndex.add(knownPoints.size());
             }
             disToTrajectoryStart += disToWayStart;
             // only query tower nodes.
             queryPoints.add(new DistanceTimeEntry(disToTrajectoryStart, edge.getEdgeState().getEdge()));
-//            queryIndex.add(knownPoints.size());
         }
         return disToTrajectoryStart;
     }
@@ -334,6 +332,7 @@ public class ACTMapMatching {
                     DistanceTimeEntry last = query.get(i-1);
                     if(last.time!=0) {
                         long travelTime = (cur.time - last.time) / 1000;
+                        double curLength = cur.distance - last.distance;
                         if (travelTime < 0 ) {
                             System.err.printf("invalid travel time(%d)! cur: %d pre: %d\n", travelTime, cur.time, last.time);
                         }else if( travelTime > 1800 ){
@@ -343,7 +342,8 @@ public class ACTMapMatching {
                                     cur.edgeID,
                                     cur.time,
                                     timestamp2TimeSlot(cur.time),
-                                    (int) travelTime));
+                                    (int) travelTime,
+                                    curLength));
                         }
                     }
                 }
@@ -366,6 +366,10 @@ public class ACTMapMatching {
             timeSlot++;
         }
         return timeSlot;
+    }
+
+    public int timestamp2slot(int timeInSeconds){
+        return timestamp2TimeSlot(timeInSeconds*1000);
     }
 
     static ProjectionResult projectionPoint(double startY, double startX, double endY, double endX, double y, double x)
@@ -421,13 +425,15 @@ public class ACTMapMatching {
         public final long timeStart;
         public final int timeSlot;
         public final int travelTime; // in seconds;
+        private final double roadLen;
 
-        public TrajectoryRoadEntry(int edgeID, long timeStart, int timeSlot, int travelTime)
+        public TrajectoryRoadEntry(int edgeID, long timeStart, int timeSlot, int travelTime, double length)
         {
             this.edgeID = edgeID;
             this.timeStart = timeStart;
             this.timeSlot = timeSlot;
             this.travelTime = travelTime;
+            this.roadLen = length;
         }
 
         public String toString(){
