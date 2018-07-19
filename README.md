@@ -77,7 +77,7 @@ road_path = t.toRoads(trajectory);
 % the second column is the timestamp (second) at which the car enter the road, the first column is the timeslot the timestamp falls (48 timeslot a day)
 % the third column is roadId which is only unique for one import, if you import map a second time, it may change.
 % the fourth column is travelTime which is the time the car spent to travel through the road (seconds).
-% the fifth column is road length.
+% the fifth column is road length (meters).
 
 
 matched = t.exactPoints(trajectory);
