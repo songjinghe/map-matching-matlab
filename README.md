@@ -74,7 +74,8 @@ road_path = t.toRoads(trajectory);
 % 0	1478793829.489	8733	73    856
 % 0	1478793878.839	8734	49    256
 %
-% the second column is the timestamp (second) at which the car enter the road, the first column is the timeslot the timestamp falls (48 timeslot a day)
+% the second column is the timestamp (second) at which the car enter the road,
+% the first column is the timeslot the timestamp falls (48 timeslot a day)
 % the third column is roadId which is only unique for one import, if you import map a second time, it may change.
 % the fourth column is travelTime which is the time the car spent to travel through the road (seconds).
 % the fifth column is road length (meters).
@@ -97,4 +98,9 @@ matched = t.exactPoints(trajectory);
 % 8734	39.8691949559484	116.471239125180	39.8691950000000	116.471230000000	1478793870.00000
 % 8734	39.8697481120190	116.471241795526	39.8697480000000	116.471265000000	1478793876.00000
 % 57875	39.8698396722739	116.471486794774	39.8699020000000	116.471512000000	1478793882.00000
+
+% Export trajectory to a gpx file (for visualization in Google Earth).
+t.toGPXFile(trajectory, "file-path-here.gpx");
+
 ```
+
