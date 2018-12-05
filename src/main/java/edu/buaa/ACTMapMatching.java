@@ -2,6 +2,7 @@ package edu.buaa;
 
 import com.graphhopper.matching.EdgeMatch;
 import com.graphhopper.matching.GPXExtension;
+import com.graphhopper.matching.GPXFile;
 import com.graphhopper.matching.MapMatching;
 import com.graphhopper.matching.MatchResult;
 import com.graphhopper.reader.osm.GraphHopperOSM;
@@ -112,6 +113,15 @@ public class ACTMapMatching {
             for (File c : f.listFiles()) delete(c);
         }
         if (!f.delete()) throw new FileNotFoundException("Failed to delete file: " + f);
+    }
+
+    public void toGPXFile(double[][] traj, String filePath){
+        List<GPXEntry> data = input(traj);
+        try {
+            new GPXFile(data).doExport(filePath);
+        }catch (Exception e){
+            System.err.println("failed to export gpx file. "+e.getMessage());
+        }
     }
 
     public double[][] toRoads(double[][] traj) {
