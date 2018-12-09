@@ -102,5 +102,37 @@ matched = t.exactPoints(trajectory);
 % Export trajectory to a gpx file (for visualization in Google Earth).
 t.toGPXFile(trajectory, "file-path-here.gpx");
 
+% K-d anonymous
+% input data columns: car_id, time_aligned, latitude, longitude
+% output is the same format.
+% Example:
+%
+trajectories=[
+1  1  39.862180	116.47135
+1  2  39.862155	116.471312
+...
+2  1  39.990   116.470
+2  2  39.999   116.488
+...
+3  1  39.155   116.155
+3  2  39.156   116.178
+...
+];
+parallel_count = 4; % run faster by setting parallel_count to the number of processors on your computer.
+anonymous_level_k = 2;
+anonymous_trajectories = t.kdAnonymous(trajectories, anonymous_level_k, parallel_count)
+
+[
+1  1  39.86180	116.4735
+1  2  39.86155	116.47312
+...
+2  1  39.9590   116.4170
+2  2  39.9399   116.4588
+...
+3  1  39.1155   116.1455
+3  2  39.1156   116.1278
+...
+]
+
 ```
 
