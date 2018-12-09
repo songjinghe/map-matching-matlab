@@ -17,10 +17,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class ACTMapMatching {
 
@@ -205,6 +203,51 @@ public class ACTMapMatching {
             }
         }
         return null;
+    }
+
+    /**
+     *
+     * @param input column: car_id(int)  time_slot(long)  latitude(double)  longitude(double)
+     * @param k anonymous level
+     * @param parallelCount run faster on multi-core processor
+     * @return same as input (but is anonymous)
+     */
+    public double[][] kdAnonymous( double[][] input, int k, int parallelCount )
+    {
+        KdAnonymous.parallelCount = parallelCount;
+        List<List<KdAnonymous.GPSPoint>> data = inputGPS(input);
+        return outputGPS(KdAnonymous.run(data, k));
+    }
+
+    private List<List<KdAnonymous.GPSPoint>> inputGPS(double[][] traj){
+        List<KdAnonymous.GPSPoint> tmp = new ArrayList<>();
+        for(int i=0; i<traj.length; i++){
+            double[] row = traj[i];
+            tmp.add(new KdAnonymous.GPSPoint((int)row[0], (long)row[1], row[2], row[3]));
+        }
+        return separateTrajByCarID(tmp);
+    }
+
+    private List<List<KdAnonymous.GPSPoint>> separateTrajByCarID(List<KdAnonymous.GPSPoint> rawData)
+    {
+        Map<Integer, List<KdAnonymous.GPSPoint>> carId2traj = rawData.stream()
+                .collect(Collectors.groupingBy(KdAnonymous.GPSPoint::getCarID));
+        carId2traj.forEach((carId, gpsPoints) -> {
+            gpsPoints.sort(Comparator.comparingLong(KdAnonymous.GPSPoint::getTimeSlot));
+        });
+        return new ArrayList<>(carId2traj.values());
+    }
+
+    private double[][] outputGPS(List<List<KdAnonymous.GPSPoint>> data) {
+        double[][] result = new double[data.size()][];
+        int i=0;
+        for(List<KdAnonymous.GPSPoint> traj: data){
+            for(KdAnonymous.GPSPoint p : traj) {
+                result[i] = new double[]{p.getCarID(), p.getTimeSlot(), p.getLat(), p.getLon()};
+                i++;
+            }
+        }
+        return result;
     }
 
     private List<GPXEntry> input(double[][] traj){
