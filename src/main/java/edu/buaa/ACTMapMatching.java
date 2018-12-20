@@ -11,14 +11,24 @@ import com.graphhopper.routing.util.CarFlagEncoder;
 import com.graphhopper.routing.util.EncodingManager;
 import com.graphhopper.routing.weighting.FastestWeighting;
 import com.graphhopper.routing.weighting.Weighting;
-import com.graphhopper.util.*;
+import com.graphhopper.util.DistanceCalc;
+import com.graphhopper.util.DistancePlaneProjection;
+import com.graphhopper.util.GPXEntry;
+import com.graphhopper.util.Parameters;
+import com.graphhopper.util.PointList;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
 public class ACTMapMatching {
 
@@ -230,12 +240,32 @@ public class ACTMapMatching {
 
     private List<List<KdAnonymous.GPSPoint>> separateTrajByCarID(List<KdAnonymous.GPSPoint> rawData)
     {
-        Map<Integer, List<KdAnonymous.GPSPoint>> carId2traj = rawData.stream()
-                .collect(Collectors.groupingBy(KdAnonymous.GPSPoint::getCarID));
-        carId2traj.forEach((carId, gpsPoints) -> {
-            gpsPoints.sort(Comparator.comparingLong(KdAnonymous.GPSPoint::getTimeSlot));
-        });
-        return new ArrayList<>(carId2traj.values());
+        Map<Integer, List<KdAnonymous.GPSPoint>> result = new HashMap<>();
+        for(KdAnonymous.GPSPoint p : rawData){
+            List<KdAnonymous.GPSPoint> trajectory = result.get(p.getCarID());
+            if(trajectory!=null){
+                trajectory.add(p);
+            }else{
+                trajectory = new ArrayList<>();
+                trajectory.add(p);
+                result.put(p.getCarID(), trajectory);
+            }
+        }
+        Comparator<KdAnonymous.GPSPoint> cp = new Comparator<KdAnonymous.GPSPoint>() {
+            @Override
+            public int compare(KdAnonymous.GPSPoint o1, KdAnonymous.GPSPoint o2) {
+                return o1.getTimeSlot() - o2.getTimeSlot();
+            }
+        };
+        for(Map.Entry<Integer, List<KdAnonymous.GPSPoint>> trajectories : result.entrySet()){
+            Collections.sort(trajectories.getValue(), cp);
+        }
+        return new ArrayList<>(result.values());
+    }
+
+    private Map<Integer, List<KdAnonymous.GPSPoint>> java7groupByCarID(List<KdAnonymous.GPSPoint> rawData) {
+
+        return null;
     }
 
     private double[][] outputGPS(List<List<KdAnonymous.GPSPoint>> data) {
