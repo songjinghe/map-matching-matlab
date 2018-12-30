@@ -7,8 +7,6 @@ import java.util.concurrent.Semaphore;
 
 public class KdAnonymous
 {
-    public static int parallelCount = 1;
-
     private static void printf(String str) {
         if(str.length()>0 && str.charAt(str.length()-1)=='\n') str = str.substring(0, str.length()-1);
         System.err.println(str);
@@ -987,7 +985,22 @@ public class KdAnonymous
             for(int i=0; i<db.n; i++){
                 memory[i] = new double[db.n];
             }
-            int parallelCount = KdAnonymous.parallelCount;
+            for(int i=0; i<db.n-1; i++)
+            {
+                for (int j = i + 1; j < db.n; j++) {
+                    double dis = original_euclidean_nD(db, i, j);
+                    memory[i][j] = dis;
+                    memory[j][i] = dis;
+                }
+            }
+        }
+
+        void FasterEuclidean_nD_Parallel(final database_nD db) {
+            memory = new double[db.n][];
+            for(int i=0; i<db.n; i++){
+                memory[i] = new double[db.n];
+            }
+            int parallelCount = 2;
             final Semaphore semaphore = new Semaphore(parallelCount);
             List<Thread> threadList = new ArrayList<>(db.n-1);
             for(int i=0; i<db.n-1; i++)

@@ -219,12 +219,10 @@ public class ACTMapMatching {
      *
      * @param input column: car_id(int)  time_slot(long)  latitude(double)  longitude(double)
      * @param k anonymous level
-     * @param parallelCount run faster on multi-core processor
      * @return same as input (but is anonymous)
      */
-    public double[][] kdAnonymous( double[][] input, int k, int parallelCount )
+    public double[][] kdAnonymous( double[][] input, int k)
     {
-        KdAnonymous.parallelCount = parallelCount;
         List<List<KdAnonymous.GPSPoint>> data = inputGPS(input);
         return outputGPS(KdAnonymous.run(data, k));
     }
