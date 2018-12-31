@@ -267,15 +267,13 @@ public class ACTMapMatching {
     }
 
     private double[][] outputGPS(List<List<KdAnonymous.GPSPoint>> data) {
-        double[][] result = new double[data.size()][];
-        int i=0;
+        List<double[]> result = new ArrayList<>();
         for(List<KdAnonymous.GPSPoint> traj: data){
             for(KdAnonymous.GPSPoint p : traj) {
-                result[i] = new double[]{p.getCarID(), p.getTimeSlot(), p.getLat(), p.getLon()};
-                i++;
+                result.add( new double[]{p.getCarID(), p.getTimeSlot(), p.getLat(), p.getLon()} );
             }
         }
-        return result;
+        return result.toArray(new double[][]{});
     }
 
     private List<GPXEntry> input(double[][] traj){
