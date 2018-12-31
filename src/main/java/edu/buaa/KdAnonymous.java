@@ -1070,7 +1070,8 @@ public class KdAnonymous
 
         public int getTimeSlot()
         {
-            return Math.toIntExact(this.getTime());
+            if(this.getTime()<Integer.MAX_VALUE) return (int) this.getTime();
+            else throw new RuntimeException("timestamp larger than INT.max_value!");
         }
 
         public void setTimeSlot(int timeSlot)
