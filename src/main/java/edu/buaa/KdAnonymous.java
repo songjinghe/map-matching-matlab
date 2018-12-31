@@ -214,15 +214,7 @@ public class KdAnonymous
 
     private static FasterEuclidean_nD disFaster = null;
     private static double euclidean_nD(database_nD DB, int a, int b){
-        if(a==DB.n || b==DB.n){
-            return original_euclidean_nD(DB, a, b);
-        }else{
-            if(disFaster==null){
-                disFaster = new FasterEuclidean_nD(DB);
-            }
-//            disFaster.verify(a, b, dis);
-            return disFaster.get(a, b);
-        }
+        return original_euclidean_nD(DB, a, b);
     }
 
     private static double original_euclidean_nD(database_nD DB, int a, int b){
