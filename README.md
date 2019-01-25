@@ -99,6 +99,12 @@ matched = t.exactPoints(trajectory);
 % 8734	39.8697481120190	116.471241795526	39.8697480000000	116.471265000000	1478793876.00000
 % 57875	39.8698396722739	116.471486794774	39.8699020000000	116.471512000000	1478793882.00000
 
+matched = t.simulatedTraj(trajectory);
+% you got something like above, not all points are matched.
+% also matched_lat, matched_lon may have more points (origin_lat, origin_lon is -1, origin_time is linear random inserted),
+% to form a complete trajectory for route.
+
+
 % Export trajectory to a gpx file (for visualization in Google Earth).
 t.toGPXFile(trajectory, "file-path-here.gpx");
 
@@ -118,9 +124,9 @@ trajectories=[
 3  2  39.156   116.178
 ...
 ];
-parallel_count = 4; % run faster by setting parallel_count to the number of processors on your computer.
+
 anonymous_level_k = 2;
-anonymous_trajectories = t.kdAnonymous(trajectories, anonymous_level_k, parallel_count)
+anonymous_trajectories = t.kdAnonymous(trajectories, anonymous_level_k)
 
 [
 1  1  39.86180	116.4735
