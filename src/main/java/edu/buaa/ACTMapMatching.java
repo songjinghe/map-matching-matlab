@@ -215,6 +215,85 @@ public class ACTMapMatching {
         return null;
     }
 
+    public double[][] simulatedTraj(double[][] traj) {
+        List<GPXEntry> data = input(traj);
+        try {
+            MatchResult mr = mapMatching.doWork(data);
+            List<EdgeMatch> matches = mr.getEdgeMatches();
+            if(matches.isEmpty()){
+                throw new NoEdgeMatchedException();
+            }else {
+                List<double[]> result = new ArrayList<>();
+                for (EdgeMatch edge : matches) {
+                    int edgeID = edge.getEdgeState().getEdge();
+                    List<GPXExtension> gpsPointOnTheWay = edge.getGpxExtensions();
+                    int k = 0;
+                    PointList nodes = edge.getEdgeState().fetchWayGeometry(3);
+                    for (int j = 0; j < nodes.size() - 1; j++) { // loop through edges. edgeNumber = nodeNumber - 1
+                        double startLat = nodes.getLatitude(j);
+                        double startLon = nodes.getLongitude(j);
+                        double endLat = nodes.getLatitude(j + 1);
+                        double endLon = nodes.getLongitude(j + 1);
+                        ProjectionResult r;
+                        while (k < gpsPointOnTheWay.size()) {
+                            GPXEntry gpxPoint = gpsPointOnTheWay.get(k).getEntry();
+                            r = projectionPoint(
+                                    startLat, startLon,
+                                    endLat, endLon,
+                                    gpxPoint.getLat(), gpxPoint.getLon());
+                            if(r.inside) {
+                                result.add(new double[]{edgeID, r.y, r.x, gpxPoint.getLat(), gpxPoint.getLon(), gpxPoint.getTime() / 1000});
+                                k++;
+                            }else{
+                                break;
+                            }
+                        }
+                        // add road route node, but estimate the timestamp later.
+                        result.add(new double[]{edgeID, endLat, endLon, -1, -1, -1});
+                    }
+                }
+                // i index of start node (has time), j index for end node (has time), k index for road route node (no time).
+                for(int i=0,j=1; i < result.size()-1; ){
+                    for(;j<result.size() && result.get(j)[3]<0; j++);
+                    if(j==i+1){
+                        i=j;
+                        j=i+1;
+                    }else{
+                        double startT = result.get(i)[5];
+                        double endT = result.get(j)[5];
+                        double deltaT = Math.round((endT - startT)/(j-i));
+                        for(int k=i+1; k<j; k++){
+                            result.get(k)[5] = (k-i)*deltaT + startT;
+                        }
+                        i=j;
+                        j=i+1;
+                    }
+                }
+                double[][] toReturn = new double[result.size()-1][];
+                for(int i=0; i<result.size()-1; i++){
+                    double[] line = result.get(i);
+                    toReturn[i] = line;
+                }
+                return toReturn;
+            }
+        } catch (IllegalStateException e) {
+            System.err.println("MM failed: Unknown error in map-matching lib.");
+        } catch (NoEdgeMatchedException e) {
+            System.err.println("MM failed: No road matched.");
+        } catch (CannotCalcTravelTimeException e) {
+            System.err.println("MM failed: Unable to calculate time.");
+        } catch (IllegalArgumentException e) {
+            System.err.println("MM failed: Seems get lost.");
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Sequence is broken for submitted track at time step")) {
+                System.err.println("MM failed: Too long to match.");
+            }else{
+                System.err.println("MM failed: Runtime error in map-matching lib.");
+            }
+        }
+        return null;
+    }
+
     /**
      *
      * @param input column: car_id(int)  time_slot(long)  latitude(double)  longitude(double)
