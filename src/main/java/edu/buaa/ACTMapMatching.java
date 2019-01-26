@@ -253,26 +253,34 @@ public class ACTMapMatching {
                     }
                 }
                 // i index of start node (has time), j index for end node (has time), k index for road route node (no time).
-                for(int i=0,j=1; i < result.size()-1; ){
-                    for(;j<result.size() && result.get(j)[3]<0; j++);
+                int i=0;
+                while(i<result.size()-1 && result.get(i)[3]<0){i++;}
+
+                for(int j=i+1; i < result.size()-1; ){
+                    while(j<result.size() && result.get(j)[3]<0) j++;
+                    if(j==result.size()) break;
+
                     if(j==i+1){
                         i=j;
                         j=i+1;
                     }else{
                         double startT = result.get(i)[5];
                         double endT = result.get(j)[5];
-                        double deltaT = Math.round((endT - startT)/(j-i));
+                        double deltaT = (endT - startT)/(j-i);
                         for(int k=i+1; k<j; k++){
-                            result.get(k)[5] = (k-i)*deltaT + startT;
+                            result.get(k)[5] = Math.round((k-i)*deltaT + startT);
                         }
                         i=j;
                         j=i+1;
                     }
                 }
                 double[][] toReturn = new double[result.size()-1][];
-                for(int i=0; i<result.size()-1; i++){
-                    double[] line = result.get(i);
-                    toReturn[i] = line;
+                for(int j=0,k=0; j<result.size()-1; j++){
+                    double[] line = result.get(j);
+                    if(line[5]>0){
+                        toReturn[k] = line;
+                        k++;
+                    }
                 }
                 return toReturn;
             }
