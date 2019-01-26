@@ -21,14 +21,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 
 public class ACTMapMatching {
 
@@ -274,13 +267,18 @@ public class ACTMapMatching {
                         j=i+1;
                     }
                 }
-                double[][] toReturn = new double[result.size()-1][];
-                for(int j=0,k=0; j<result.size()-1; j++){
-                    double[] line = result.get(j);
-                    if(line[5]>0){
-                        toReturn[k] = line;
-                        k++;
+
+                Iterator<double[]> iterator = result.iterator();
+                while(iterator.hasNext()){
+                    double[] line = iterator.next();
+                    if(line[5]<0){
+                        iterator.remove();
                     }
+                }
+
+                double[][] toReturn = new double[result.size()][];
+                for(int j=0; j<result.size(); j++){
+                    toReturn[j] = result.get(j);
                 }
                 return toReturn;
             }
