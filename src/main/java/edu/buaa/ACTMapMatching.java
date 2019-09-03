@@ -129,21 +129,30 @@ public class ACTMapMatching {
         try {
             return matching(data);
         } catch (IllegalStateException e) {
-            System.err.println("MM failed: Unknown error in map-matching lib.");
+            System.err.println("MM failed: IllegalStateException in map-matching lib ("+e.getMessage()+").");
+            return new double[][]{{-1d}};
         } catch (NoEdgeMatchedException e) {
             System.err.println("MM failed: No road matched.");
+            return new double[][]{{-2d}};
         } catch (CannotCalcTravelTimeException e) {
             System.err.println("MM failed: Unable to calculate time.");
+            return new double[][]{{-3d}};
         } catch (IllegalArgumentException e) {
-            System.err.println("MM failed: Seems get lost.");
+            System.err.println("MM failed: Seems get lost ("+e.getMessage()+").");
+            return new double[][]{{-4d}};
         } catch (RuntimeException e) {
-            if (e.getMessage() != null && e.getMessage().startsWith("Sequence is broken for submitted track at time step")) {
-                System.err.println("MM failed: Too long to match.");
+            if (e.getMessage() != null){
+                if (e.getMessage().startsWith("Sequence is broken for submitted track at time step")) {
+                    System.err.println("MM failed: "+e.getMessage());
+                    return new double[][]{{-5d}};
+                }else{
+                    System.err.println("MM failed: "+e.getMessage());
+                    return new double[][]{{-6d}};
+                }
             }else{
-                System.err.println("MM failed: Runtime error in map-matching lib.");
+                System.err.println("MM failed: Unknown runtime error in map-matching lib.");
             }
         }
-        return null;
     }
 
     public double[][] exactPoints(double[][] traj) {
