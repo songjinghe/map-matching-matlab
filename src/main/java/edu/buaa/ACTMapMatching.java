@@ -151,6 +151,7 @@ public class ACTMapMatching {
                 }
             }else{
                 System.err.println("MM failed: Unknown runtime error in map-matching lib.");
+                return new double[][]{{-7d}};
             }
         }
     }
