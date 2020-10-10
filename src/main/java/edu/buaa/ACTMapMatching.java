@@ -147,6 +147,54 @@ public class ACTMapMatching {
         return null;
     }
 
+    public double[][][] rawMM2Roads(double[][] traj) {
+        try {
+            List<GPXEntry> data = input(traj);
+            MatchResult mr = mapMatching.doWork(data);
+
+            List<EdgeMatch> matches = mr.getEdgeMatches();
+            if(matches.isEmpty()){
+                throw new NoEdgeMatchedException();
+            }else {
+                double[][][] result = new double[matches.size()][][];
+                for (int i=0; i < matches.size(); i++) {
+                    EdgeMatch edge = matches.get(i);
+                    PointList nodes = edge.getEdgeState().fetchWayGeometry(3);
+                    double[][] oneRoad = new double[nodes.size()][];
+                    for (int j = 0; j < nodes.size(); j++) { // loop through edges. edgeNumber = nodeNumber - 1
+                        double lat = nodes.getLatitude(j);
+                        double lon = nodes.getLongitude(j);
+                        oneRoad[j] = new double[]{lat, lon};
+                    }
+                    result[i] = oneRoad;
+                }
+                return result;
+            }
+        } catch (IllegalStateException e) {
+            System.err.println("MM failed: IllegalStateException in map-matching lib ("+e.getMessage()+").");
+            return new double[][][]{{{-1d}}};
+        } catch (NoEdgeMatchedException e) {
+            System.err.println("MM failed: No road matched.");
+            return new double[][][]{{{-2d}}};
+        } catch (IllegalArgumentException e) {
+            System.err.println("MM failed: Seems get lost ("+e.getMessage()+").");
+            return new double[][][]{{{-4d}}};
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null){
+                if (e.getMessage().startsWith("Sequence is broken for submitted track at time step")) {
+                    System.err.println("MM failed: "+e.getMessage());
+                    return new double[][][]{{{-5d}}};
+                }else{
+                    System.err.println("MM failed: "+e.getMessage());
+                    return new double[][][]{{{-6d}}};
+                }
+            }else{
+                System.err.println("MM failed: Unknown runtime error in map-matching lib.");
+                return new double[][][]{{{-7d}}};
+            }
+        }
+    }
+
     public double[][] exactPoints(double[][] traj) {
         List<GPXEntry> data = input(traj);
         try {

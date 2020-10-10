@@ -80,6 +80,20 @@ road_path = t.toRoads(trajectory);
 % the fourth column is travelTime which is the time the car spent to travel through the road (seconds).
 % the fifth column is road length (meters).
 
+% if you want raw output from map-matching lab, try:
+roads = t.rawMM2Roads(trajectory);
+% you got a list of roads, each roads contains serval gps points
+% [
+%    [39.862180	116.471353],
+%    [39.862180	116.471353],
+%    [39.862180	116.471353]
+% ],[
+%    [39.862180	116.471353],
+%    [39.862180	116.471353],
+%    [39.862180	116.471353]
+% ],
+% ...
+%
 
 matched = t.exactPoints(trajectory);
 % you got something like this, not all points are matched.
