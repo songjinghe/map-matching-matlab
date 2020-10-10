@@ -11,16 +11,17 @@ import com.graphhopper.routing.util.CarFlagEncoder;
 import com.graphhopper.routing.util.EncodingManager;
 import com.graphhopper.routing.weighting.FastestWeighting;
 import com.graphhopper.routing.weighting.Weighting;
-import com.graphhopper.util.*;
+import com.graphhopper.util.DistanceCalc;
+import com.graphhopper.util.DistancePlaneProjection;
+import com.graphhopper.util.GPXEntry;
+import com.graphhopper.util.Parameters;
+import com.graphhopper.util.PointList;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
 
 public class ACTMapMatching {
 
@@ -156,6 +157,54 @@ public class ACTMapMatching {
         }
     }
 
+    public double[][][] rawMM2Roads(double[][] traj) {
+        try {
+            List<GPXEntry> data = input(traj);
+            MatchResult mr = mapMatching.doWork(data);
+
+            List<EdgeMatch> matches = mr.getEdgeMatches();
+            if(matches.isEmpty()){
+                throw new NoEdgeMatchedException();
+            }else {
+                double[][][] result = new double[matches.size()][][];
+                for (int i=0; i < matches.size(); i++) {
+                    EdgeMatch edge = matches.get(i);
+                    PointList nodes = edge.getEdgeState().fetchWayGeometry(3);
+                    double[][] oneRoad = new double[nodes.size()][];
+                    for (int j = 0; j < nodes.size(); j++) { // loop through edges. edgeNumber = nodeNumber - 1
+                        double lat = nodes.getLatitude(j);
+                        double lon = nodes.getLongitude(j);
+                        oneRoad[j] = new double[]{lat, lon};
+                    }
+                    result[i] = oneRoad;
+                }
+                return result;
+            }
+        } catch (IllegalStateException e) {
+            System.err.println("MM failed: IllegalStateException in map-matching lib ("+e.getMessage()+").");
+            return new double[][][]{{{-1d}}};
+        } catch (NoEdgeMatchedException e) {
+            System.err.println("MM failed: No road matched.");
+            return new double[][][]{{{-2d}}};
+        } catch (IllegalArgumentException e) {
+            System.err.println("MM failed: Seems get lost ("+e.getMessage()+").");
+            return new double[][][]{{{-4d}}};
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null){
+                if (e.getMessage().startsWith("Sequence is broken for submitted track at time step")) {
+                    System.err.println("MM failed: "+e.getMessage());
+                    return new double[][][]{{{-5d}}};
+                }else{
+                    System.err.println("MM failed: "+e.getMessage());
+                    return new double[][][]{{{-6d}}};
+                }
+            }else{
+                System.err.println("MM failed: Unknown runtime error in map-matching lib.");
+                return new double[][][]{{{-7d}}};
+            }
+        }
+    }
+
     public double[][] exactPoints(double[][] traj) {
         List<GPXEntry> data = input(traj);
         try {
@@ -215,6 +264,159 @@ public class ACTMapMatching {
             }
         }
         return null;
+    }
+
+    public double[][] simulatedTraj(double[][] traj) {
+        List<GPXEntry> data = input(traj);
+        try {
+            MatchResult mr = mapMatching.doWork(data);
+            List<EdgeMatch> matches = mr.getEdgeMatches();
+            if(matches.isEmpty()){
+                throw new NoEdgeMatchedException();
+            }else {
+                List<double[]> result = new ArrayList<>();
+                for (EdgeMatch edge : matches) {
+                    int edgeID = edge.getEdgeState().getEdge();
+                    List<GPXExtension> gpsPointOnTheWay = edge.getGpxExtensions();
+                    int k = 0;
+                    PointList nodes = edge.getEdgeState().fetchWayGeometry(3);
+                    for (int j = 0; j < nodes.size() - 1; j++) { // loop through edges. edgeNumber = nodeNumber - 1
+                        double startLat = nodes.getLatitude(j);
+                        double startLon = nodes.getLongitude(j);
+                        double endLat = nodes.getLatitude(j + 1);
+                        double endLon = nodes.getLongitude(j + 1);
+                        ProjectionResult r;
+                        while (k < gpsPointOnTheWay.size()) {
+                            GPXEntry gpxPoint = gpsPointOnTheWay.get(k).getEntry();
+                            r = projectionPoint(
+                                    startLat, startLon,
+                                    endLat, endLon,
+                                    gpxPoint.getLat(), gpxPoint.getLon());
+                            if(r.inside) {
+                                result.add(new double[]{edgeID, r.y, r.x, gpxPoint.getLat(), gpxPoint.getLon(), gpxPoint.getTime() / 1000});
+                                k++;
+                            }else{
+                                break;
+                            }
+                        }
+                        // add road route node, but estimate the timestamp later.
+                        result.add(new double[]{edgeID, endLat, endLon, -1, -1, -1});
+                    }
+                }
+                // i index of start node (has time), j index for end node (has time), k index for road route node (no time).
+                int i=0;
+                while(i<result.size()-1 && result.get(i)[3]<0){i++;}
+
+                for(int j=i+1; i < result.size()-1; ){
+                    while(j<result.size() && result.get(j)[3]<0) j++;
+                    if(j==result.size()) break;
+
+                    if(j==i+1){
+                        i=j;
+                        j=i+1;
+                    }else{
+                        double startT = result.get(i)[5];
+                        double endT = result.get(j)[5];
+                        double deltaT = (endT - startT)/(j-i);
+                        for(int k=i+1; k<j; k++){
+                            result.get(k)[5] = Math.round((k-i)*deltaT + startT);
+                        }
+                        i=j;
+                        j=i+1;
+                    }
+                }
+
+                Iterator<double[]> iterator = result.iterator();
+                while(iterator.hasNext()){
+                    double[] line = iterator.next();
+                    if(line[5]<0){
+                        iterator.remove();
+                    }
+                }
+
+                double[][] toReturn = new double[result.size()][];
+                for(int j=0; j<result.size(); j++){
+                    toReturn[j] = result.get(j);
+                }
+                return toReturn;
+            }
+        } catch (IllegalStateException e) {
+            System.err.println("MM failed: Unknown error in map-matching lib.");
+        } catch (NoEdgeMatchedException e) {
+            System.err.println("MM failed: No road matched.");
+        } catch (CannotCalcTravelTimeException e) {
+            System.err.println("MM failed: Unable to calculate time.");
+        } catch (IllegalArgumentException e) {
+            System.err.println("MM failed: Seems get lost.");
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Sequence is broken for submitted track at time step")) {
+                System.err.println("MM failed: Too long to match.");
+            }else{
+                System.err.println("MM failed: Runtime error in map-matching lib.");
+            }
+        }
+        return null;
+    }
+
+    /**
+     *
+     * @param input column: car_id(int)  time_slot(long)  latitude(double)  longitude(double)
+     * @param k anonymous level
+     * @return same as input (but is anonymous)
+     */
+    public double[][] kdAnonymous( double[][] input, int k)
+    {
+        List<List<KdAnonymous.GPSPoint>> data = inputGPS(input);
+        return outputGPS(KdAnonymous.run(data, k));
+    }
+
+    private List<List<KdAnonymous.GPSPoint>> inputGPS(double[][] traj){
+        List<KdAnonymous.GPSPoint> tmp = new ArrayList<>();
+        for(int i=0; i<traj.length; i++){
+            double[] row = traj[i];
+            tmp.add(new KdAnonymous.GPSPoint((int)row[0], (long)row[1], row[2], row[3]));
+        }
+        return separateTrajByCarID(tmp);
+    }
+
+    private List<List<KdAnonymous.GPSPoint>> separateTrajByCarID(List<KdAnonymous.GPSPoint> rawData)
+    {
+        Map<Integer, List<KdAnonymous.GPSPoint>> result = new HashMap<>();
+        for(KdAnonymous.GPSPoint p : rawData){
+            List<KdAnonymous.GPSPoint> trajectory = result.get(p.getCarID());
+            if(trajectory!=null){
+                trajectory.add(p);
+            }else{
+                trajectory = new ArrayList<>();
+                trajectory.add(p);
+                result.put(p.getCarID(), trajectory);
+            }
+        }
+        Comparator<KdAnonymous.GPSPoint> cp = new Comparator<KdAnonymous.GPSPoint>() {
+            @Override
+            public int compare(KdAnonymous.GPSPoint o1, KdAnonymous.GPSPoint o2) {
+                return o1.getTimeSlot() - o2.getTimeSlot();
+            }
+        };
+        for(Map.Entry<Integer, List<KdAnonymous.GPSPoint>> trajectories : result.entrySet()){
+            Collections.sort(trajectories.getValue(), cp);
+        }
+        return new ArrayList<>(result.values());
+    }
+
+    private Map<Integer, List<KdAnonymous.GPSPoint>> java7groupByCarID(List<KdAnonymous.GPSPoint> rawData) {
+
+        return null;
+    }
+
+    private double[][] outputGPS(List<List<KdAnonymous.GPSPoint>> data) {
+        List<double[]> result = new ArrayList<>();
+        for(List<KdAnonymous.GPSPoint> traj: data){
+            for(KdAnonymous.GPSPoint p : traj) {
+                result.add( new double[]{p.getCarID(), p.getTimeSlot(), p.getLat(), p.getLon()} );
+            }
+        }
+        return result.toArray(new double[][]{});
     }
 
     private List<GPXEntry> input(double[][] traj){

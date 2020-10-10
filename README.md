@@ -80,6 +80,20 @@ road_path = t.toRoads(trajectory);
 % the fourth column is travelTime which is the time the car spent to travel through the road (seconds).
 % the fifth column is road length (meters).
 
+% if you want raw output from map-matching lab, try:
+roads = t.rawMM2Roads(trajectory);
+% you got a list of roads, each roads contains serval gps points
+% [
+%    [39.862180	116.471353],
+%    [39.862180	116.471353],
+%    [39.862180	116.471353]
+% ],[
+%    [39.862180	116.471353],
+%    [39.862180	116.471353],
+%    [39.862180	116.471353]
+% ],
+% ...
+%
 
 matched = t.exactPoints(trajectory);
 % you got something like this, not all points are matched.
@@ -99,8 +113,46 @@ matched = t.exactPoints(trajectory);
 % 8734	39.8697481120190	116.471241795526	39.8697480000000	116.471265000000	1478793876.00000
 % 57875	39.8698396722739	116.471486794774	39.8699020000000	116.471512000000	1478793882.00000
 
+matched = t.simulatedTraj(trajectory);
+% you got something like above, not all points are matched.
+% also matched_lat, matched_lon may have more points (origin_lat, origin_lon is -1, origin_time is linear random inserted),
+% to form a complete trajectory for route.
+
+
 % Export trajectory to a gpx file (for visualization in Google Earth).
 t.toGPXFile(trajectory, "file-path-here.gpx");
+
+% K-d anonymous
+% input data columns: car_id, time_aligned, latitude, longitude
+% output is the same format.
+% Example:
+%
+trajectories=[
+1  1  39.862180	116.47135
+1  2  39.862155	116.471312
+...
+2  1  39.990   116.470
+2  2  39.999   116.488
+...
+3  1  39.155   116.155
+3  2  39.156   116.178
+...
+];
+
+anonymous_level_k = 2;
+anonymous_trajectories = t.kdAnonymous(trajectories, anonymous_level_k)
+
+[
+1  1  39.86180	116.4735
+1  2  39.86155	116.47312
+...
+2  1  39.9590   116.4170
+2  2  39.9399   116.4588
+...
+3  1  39.1155   116.1455
+3  2  39.1156   116.1278
+...
+]
 
 ```
 
